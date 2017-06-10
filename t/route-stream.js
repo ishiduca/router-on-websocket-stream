@@ -44,7 +44,7 @@ test('notFoundRoutesMethodError', t => {
   }))
 })
 
-test('multi resuponse # stream', t => {
+test('multi response # stream', t => {
   var spy = []
   var route = routeStream({
     'm': (params) => {
@@ -109,7 +109,7 @@ test('multi resuponse # stream', t => {
   }))
 })
 
-test('multi resuponse # promise', t => {
+test('multi response # promise', t => {
   var spy = []
   var route = routeStream({
     'm': (params) => {
@@ -137,6 +137,41 @@ test('multi resuponse # promise', t => {
       {count: -9},
       {count: -8},
       {count: -7}]
+    ],
+    'can send multi response')
+    t.end()
+  })
+
+  route.write(safe({
+    method: 'm',
+    params: {
+      first: 10
+    }
+  }))
+
+  route.end(safe({
+    method: 'm',
+    params: {
+      first: -10
+    }
+  }))
+})
+
+test('a response # promise', t => {
+  var spy = []
+  var route = routeStream({
+    'm': (params) => {
+      return Promise.resolve({count: params.first * -1})
+    }
+  })
+
+  route.on('data', s => spy.push(JSON.parse(s).result))
+
+  missi.finished(route, err => {
+    t.notOk(err, 'no exists error')
+    t.deepEqual(spy, [
+      {count: -10},
+      {count: 10}
     ],
     'can send multi response')
     t.end()

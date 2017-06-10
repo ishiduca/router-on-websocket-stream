@@ -32,6 +32,7 @@ RouterStream.prototype._transform = function _write (b, _, done) {
   if (iss.readable(s)) {
     s.on('data', function (data) {
       me.push(safe({
+        id: req.id,
         request: req,
         result: data
       }))
@@ -41,21 +42,22 @@ RouterStream.prototype._transform = function _write (b, _, done) {
       if (err) onError(err)
       else done()
     })
+    return
   }
 
-  else if (isp(s)) {
+  if (isp(s)) {
     s.then(function onResolve (result) {
       done(null, safe({
+        id: req.id,
         request: req,
         result: result
       }))
     })
     .catch(onError)
+    return
   }
 
-  else {
-    isNotStreamError(s)
-  }
+  isNotStreamError(s)
 
   function JSONParseError () {
     var err = new Error('JSON parse error')
@@ -88,6 +90,7 @@ RouterStream.prototype._transform = function _write (b, _, done) {
 
   function onError (err) {
     done(null, safe({
+      id: (req || {}).id,
       request: req || str,
       error: String(err)
     }))
