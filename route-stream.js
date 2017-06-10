@@ -3,6 +3,7 @@ var eos = require('end-of-stream')
 var safe = require('json-stringify-safe')
 var stream = require('readable-stream')
 var iss = require('is-stream')
+var isp = require('is-promise')
 var inherits = require('inherits')
 
 module.exports = RouterStream
@@ -28,19 +29,33 @@ RouterStream.prototype._transform = function _write (b, _, done) {
   var me = this
   var s = this.routes[req.method](req.params)
 
-  if (!iss.readable(s)) return isNotStreamError(s)
+  if (iss.readable(s)) {
+    s.on('data', function (data) {
+      me.push(safe({
+        request: req,
+        result: data
+      }))
+    })
 
-  s.on('data', function (data) {
-    me.push(safe({
-      request: req,
-      result: data
-    }))
-  })
+    eos(s, function (err) {
+      if (err) onError(err)
+      else done()
+    })
+  }
 
-  eos(s, function (err) {
-    if (err) onError(err)
-    else done()
-  })
+  else if (isp(s)) {
+    s.then(function onResolve (result) {
+      done(null, safe({
+        request: req,
+        result: result
+      }))
+    })
+    .catch(onError)
+  }
+
+  else {
+    isNotStreamError(s)
+  }
 
   function JSONParseError () {
     var err = new Error('JSON parse error')
