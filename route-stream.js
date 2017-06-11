@@ -24,7 +24,9 @@ RouterStream.prototype._transform = function _write (b, _, done) {
   }
 
   if (!req.method) return notFoundRequestMethodError()
-  if (typeof this.routes[req.method] !== 'function') return notFoundRoutesMethodError()
+  if (typeof this.routes[req.method] !== 'function') {
+    return notFoundRoutesMethodError()
+  }
 
   var me = this
   var s = this.routes[req.method](req.params)

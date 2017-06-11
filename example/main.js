@@ -1,19 +1,15 @@
-var websocket = require('websocket-stream')
-var missi = require('mississippi')
-var safe = require('json-stringify-safe')
 var loc = window.location
 var uri = [loc.protocol.replace('http', 'ws'), '//', loc.host].join('')
+var websocket = require('websocket-stream')
+var route = require('../browser')
 
 var ws = websocket(uri)
+var router = route()
+var m = router.method('multi')
 
-ws.on('data', b => {
-  console.log(JSON.parse(b))
-})
+router.pipe(ws).pipe(router)
 
-ws.write(safe({
-  method: 'multi', params: {count: 10}
-}))
+m.on('data', result => console.dir(result))
 
-ws.write(safe({
-  method: 'multi', params: {count: -11}
-}))
+m.write({count: 10})
+m.write({count: -11})

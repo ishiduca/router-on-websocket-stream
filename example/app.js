@@ -3,27 +3,26 @@ var path = require('path')
 var ecstatic = require('ecstatic')(path.join(__dirname, 'static'))
 var websocket = require('websocket-stream')
 var missi = require('mississippi')
-var Router = require('../')
 var app = http.createServer(ecstatic)
 var port = process.env.PORT || 8888
-
-var router = Router()
+var router = require('../')()
 
 router.add('multi', (params) => {
   var t = missi.through.obj()
   var c = 0
   var id = setInterval(() => {
-    if (c === 10) {
-      clearInterval(id)
-      id = null
-      t.end({end: true})
-      return
-    }
+    if (c === 10) return clear()
     t.write({count: params.count + c})
     c += 1
   }, 500)
 
   return t
+
+  function clear () {
+    clearInterval(id)
+    id = null
+    t.end({end: true})
+  }
 })
 
 websocket.createServer({server: app}, sock => {
