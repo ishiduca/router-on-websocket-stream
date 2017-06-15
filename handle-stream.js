@@ -22,5 +22,7 @@ HandleS.prototype._write = function _write (params, _, done) {
     params: params
   }, this._request)
   this._duplex.push(safe(rpc))
+  this.emit('request', rpc)
+  this._duplex.emit('request', rpc)
   done()
 }

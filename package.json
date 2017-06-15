@@ -1,6 +1,6 @@
 {
   "name": "router-on-websocket-stream",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -17,6 +17,7 @@
   "author": "ishiduca@gmail.com",
   "license": "MIT",
   "dependencies": {
+    "blue-frog-core": "^0.3.0",
     "end-of-stream": "^1.4.0",
     "inherits": "^2.0.3",
     "is-promise": "^2.1.0",
