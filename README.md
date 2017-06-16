@@ -48,20 +48,38 @@ app.listen(port, () => {
 ### browser
 
 ```js
-var loc = window.location
-var uri = [loc.protocol, '//', loc.host].join('')
+var inject = require('reconnect-core')
 var websocket = require('websocket-stream')
 var router = requrie('router-on-websocket-stream')
 
-var ws = websocket(uri)
-var r = router()
+var loc = window.location
+var uri = [loc.protocol, '//', loc.host].join('')
 
-r.pipe(ws).pipe(r)
+var r = router()
+var reconnect = inject(uri => websocket(uri))
+var re = reconnect({}, ws => {
+  ws.once('close', () => console.log('ws closed'))
+  ws.once('end', () => {
+    console.log('ws ended')
+    r.unpipe(ws)
+    ws.unpipe(r)
+  })
+
+  r.pipe(ws).pipe(r, {end: false})
+})
+
+re.on('connect', () => console.log('connected - "%s", uri))
+re.on('reconnect', (n, delay) => {
+  console.log('recon "%s" times, delay "%s"', n, delay)
+})
+re.on('error', err => console.error(err))
 
 var countup = r.method('countup')
 
 countup.on('data', result => console.dir(result))
 countup.on('error', err => console.error(err))
+
+re.connect(uri)
 
 countup.write({count: 10})
 countup.write({count: -10})

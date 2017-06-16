@@ -8,6 +8,8 @@ var port = process.env.PORT || 8888
 var router = require('../')()
 
 router.add('multi', (params) => {
+  if (typeof params.count !== 'number') return error()
+
   var t = missi.through.obj()
   var c = 0
   var id = setInterval(() => {
@@ -23,16 +25,21 @@ router.add('multi', (params) => {
     id = null
     t.end({end: true})
   }
+
+  function error () {
+    var mes = 'params.count must be "number"'
+    var err = new TypeError(mes)
+    return Promise.reject(err)
+  }
 })
 
 websocket.createServer({server: app}, sock => {
   sock.pipe(router.route()).pipe(sock)
 })
 
-if (!module.parent) {
-  app.listen(port, () => {
-    console.log(`server start to listen on port "${port}"`)
-  })
-}
+listen()
 
-module.exports = app
+function listen () {
+  var mes = `server start to listen on port "${port}"`
+  app.listen(port, () => console.log(mes))
+}

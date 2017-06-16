@@ -29,7 +29,7 @@ RouterStream.prototype._transform = function _write (b, _, done) {
   }
 
   var me = this
-  var s = this.routes[req.method](req.params)
+  var s = this.routes[req.method](req.params, req)
 
   if (iss.readable(s)) {
     s.on('data', function (data) {
