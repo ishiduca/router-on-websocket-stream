@@ -68,7 +68,7 @@ var re = reconnect({}, ws => {
   r.pipe(ws).pipe(r, {end: false})
 })
 
-re.on('connect', () => console.log('connected - "%s", uri))
+re.on('connect', () => console.log('connected - "%s"', uri))
 re.on('reconnect', (n, delay) => {
   console.log('recon "%s" times, delay "%s"', n, delay)
 })
