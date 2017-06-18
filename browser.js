@@ -1,15 +1,18 @@
 'use strict'
 var stream = require('readable-stream')
 var inherits = require('inherits')
-var HandleS = require('./handle-stream')
+var HandleStream = require('./handle-stream')
 
 module.exports = Dup
 inherits(Dup, stream.Duplex)
 
 function Dup () {
   if (!(this instanceof Dup)) return new Dup()
-  stream.Duplex.call(this, {objectMode: true})
-  this._handers = {}
+  stream.Duplex.call(this, {
+    highWaterMark: 16384,
+    objectMode: true
+  })
+  this.handles = {}
 }
 
 Dup.prototype._read = function () {}
@@ -17,40 +20,30 @@ Dup.prototype._write = function _write (b, _, done) {
   var s = String(b)
   var res; try {
     res = JSON.parse(s)
-  } catch (e) {
-    return JSONParseError()
+  } catch (er) {
+    return JSONParserError()
   }
 
   this.emit('response', res)
 
-  var hs = this._handers[res.request.method]
-  if (hs) {
-    hs.emit('response', res)
-    if (res.error) rpcResponseError()
-    else if (res.result != null) hs.push(res.result)
+  var handle = this.handles[res.request.method]
+  if (handle) {
+    handle.emit('response', res)
+    if (res.error) handle.emit('error', res.error)
+    else if (res.result != null) handle.push(res.result)
   }
 
   done()
 
-  function JSONParseError () {
+  function JSONParserError () {
     var err = new Error('JSON parse error')
-    err.name = 'JSONParseError'
-    err.JSONParseError = true
+    err.name = 'JSONParserError'
+    err.JSONParserError = true
     err.data = s
     return done(err)
   }
-
-  function rpcResponseError () {
-    if (res.error instanceof Error) return hs.emit('error', res.error)
-    var reg = (res.error || '').match(/^(.*Error):\s*(.+)$/)
-    if (reg) {
-      var err = new Error(reg[2])
-      err.name = reg[1]
-      return hs.emit('error', err)
-    }
-  }
 }
 
-Dup.prototype.method = function createHandleStream (method) {
-  return (this._handers[method] = new HandleS(this, method))
+Dup.prototype.method = function (method) {
+  return (this.handles[method] = new HandleStream(this, method))
 }

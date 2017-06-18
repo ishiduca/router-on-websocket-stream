@@ -1,28 +1,28 @@
 'use strict'
 var stream = require('readable-stream')
 var inherits = require('inherits')
-var safe = require('json-stringify-safe')
 var uniq = require('unique-string')
-var xtend = require('xtend')
+var safe = require('json-stringify-safe')
+var request = require('blue-frog-core/request')
 
-module.exports = HandleS
-inherits(HandleS, stream.Duplex)
+module.exports = HandleStream
+inherits(HandleStream, stream.Duplex)
 
-function HandleS (s, method) {
-  if (!(this instanceof HandleS)) return new HandleS(s, method)
-  stream.Duplex.call(this, {objectMode: true})
-  this._request = {method: method}
-  this._duplex = s
+function HandleStream (dup, method) {
+  if (!(this instanceof HandleStream)) return new HandleStream(dup, method)
+  stream.Duplex.call(this, {
+    highWaterMark: 16384,
+    objectMode: true
+  })
+  this._method = method
+  this._duplex = dup
 }
 
-HandleS.prototype._read = function () {}
-HandleS.prototype._write = function _write (params, _, done) {
-  var rpc = xtend({
-    id: uniq(),
-    params: params
-  }, this._request)
-  this._duplex.push(safe(rpc))
-  this.emit('request', rpc)
-  this._duplex.emit('request', rpc)
+HandleStream.prototype._read = function () {}
+HandleStream.prototype._write = function _write (params, _, done) {
+  var req = request(uniq(), this._method, params)
+  this._duplex.push(safe(req))
+  this.emit('request', req)
+  this._duplex.emit('request', req)
   done()
 }

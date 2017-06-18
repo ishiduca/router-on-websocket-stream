@@ -23,7 +23,7 @@ router.add('multi', (params) => {
   function clear () {
     clearInterval(id)
     id = null
-    t.end({end: true})
+    t.end()
   }
 
   function error () {

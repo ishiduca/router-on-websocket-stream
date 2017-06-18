@@ -1,5 +1,5 @@
 'use strict'
-var RouteStream = require('./route-stream')
+var RouterSteram = require('./router-stream')
 
 module.exports = Router
 
@@ -12,13 +12,13 @@ Router.prototype.add = function (method, f) {
   return (this.routes[method] = f)
 }
 
-Router.prototype.route = function createRouteStream () {
-  var ts = new RouteStream(this.routes)
-  ts.once('pipe', function (socket) {
-    socket.once('close', socket.unpipe.bind(socket, this))
-  })
-  ts.once('unpipe', function (socket) {
-    this.unpipe(socket)
-  })
+Router.prototype.route = function createRouterStream () {
+  var ts = new RouterSteram(this.routes)
+//  ts.once('pipe', function (socket) {
+//    socket.once('close', socket.unpipe.bind(socket, this))
+//  })
+//  ts.once('unpipe', function (socket) {
+//    this.unpipe(socket)
+//  })
   return ts
 }
