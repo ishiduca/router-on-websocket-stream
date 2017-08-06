@@ -1,6 +1,7 @@
 'use strict'
 var test = require('tape')
 var RouterStream = require('router-stream')
+var Router = require('index')
 var missi = require('mississippi')
 
 test('var routerStream = new RouterStream({routes})', t => {
@@ -18,7 +19,10 @@ test('routerStream.write(rpcStr) # application -> value or error', t => {
     }
   }
   var spy = []
-  var s = new RouterStream({toUpperCase: toUpperCase})
+  var r = new Router()
+  var s = new RouterStream(r)
+
+  r.add('toUpperCase', toUpperCase)
 
   s.on('data', str => spy.push(str))
   s.once('end', () => {
@@ -51,7 +55,9 @@ test('routerStream.write(rpcStr) # application -> promise', t => {
       : Promise.reject(new Error('params.value not found'))
   }
   var spy = []
-  var s = new RouterStream({toUpperCase: toUpperCase})
+  var r = Router()
+  var s = new RouterStream(r)
+  r.add('toUpperCase', toUpperCase)
 
   s.on('data', str => spy.push(str))
   s.once('end', () => {
@@ -107,7 +113,9 @@ test('routerStream.write(rpcStr) # application -> readable.stream', t => {
     return s
   }
   var spy = []
-  var s = new RouterStream({toUpperCase: toUpperCase})
+  var r = Router()
+  var s = new RouterStream(r)
+  r.add('toUpperCase', toUpperCase)
 
   s.on('data', str => spy.push(str))
   s.once('end', () => {

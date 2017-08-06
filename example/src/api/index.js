@@ -32,7 +32,8 @@ module.exports = function setupApi (emitter) {
 
   m.on('data', result => emitter.emit('add result', result))
 
-  emitter.on('multi', n => m.write({count: n}))
+//  emitter.on('multi', n => m.write({count: n}))
+  emitter.on('multi', n => m.broadcast({count: n}))
 
   re.connect(uri)
 

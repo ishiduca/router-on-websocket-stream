@@ -11,13 +11,15 @@ var error = require('blue-frog-core/error')
 module.exports = RouterStream
 inherits(RouterStream, stream.Transform)
 
-function RouterStream (routes) {
-  if (!(this instanceof RouterStream)) return new RouterStream(routes)
+function RouterStream (router) {
+  if (!(this instanceof RouterStream)) {
+    return new RouterStream(router)
+  }
   stream.Transform.call(this, {
     highWaterMark: 16384,
     objectMode: true
   })
-  this.routes = routes || {}
+  this.router = router
 }
 
 RouterStream.prototype._transform = function _transform (b, _, done) {
@@ -31,21 +33,28 @@ RouterStream.prototype._transform = function _transform (b, _, done) {
   if (!req.method) {
     return InvalidRequest('method not found in request object')
   }
-  if (typeof this.routes[req.method] !== 'function') {
+  if (typeof this.router.routes[req.method] !== 'function') {
     return MethodNotFound(`"${req.method}" not found in router`)
   }
 
   var me = this
-  var some = this.routes[req.method](req.params, req)
+  var doesBroadcast = req.broadcast
+  var some = this.router.routes[req.method](req.params, req)
 
   if (iss.readable(some)) {
     some.on('data', function (result) {
-      me.push(rpcResponse(result))
+      if (doesBroadcast) broadcast(rpcResponse(result))
+      else me.push(rpcResponse(result))
     })
 
     eos(some, function (err) {
       if (err) InternalError(err)
-      else done(null, rpcResponse({responseEnd: true}))
+      else if (doesBroadcast) {
+        broadcast(rpcResponse({responseEnd: true}))
+        done()
+      } else {
+        done(null, rpcResponse({responseEnd: true}))
+      }
     })
 
     return
@@ -53,7 +62,12 @@ RouterStream.prototype._transform = function _transform (b, _, done) {
 
   if (isp(some)) {
     some.then(function (result) {
-      done(null, rpcResponse(result))
+      if (doesBroadcast) {
+        broadcast(rpcResponse(result))
+        done()
+      } else {
+        done(null, rpcResponse(result))
+      }
     })
     .catch(InternalError)
 
@@ -62,6 +76,12 @@ RouterStream.prototype._transform = function _transform (b, _, done) {
 
   var mes = 'router.add should return "promise" or "readable stream"'
   InternalError(new TypeError(mes))
+
+  function broadcast (json) {
+    me.router.writables.forEach(function (socket) {
+      socket.write(json)
+    })
+  }
 
   function rpcResponse (result) {
     var res = response((req || {}).id || null, result)

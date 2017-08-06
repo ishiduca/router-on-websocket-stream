@@ -20,9 +20,18 @@ function HandleStream (dup, method) {
 
 HandleStream.prototype._read = function () {}
 HandleStream.prototype._write = function _write (params, _, done) {
+  w.apply(this, [params])
+  done()
+}
+
+HandleStream.prototype.broadcast = function (params) {
+  w.apply(this, [params, true])
+}
+
+function w (params, _broadcast) {
   var req = request(uniq(), this._method, params)
+  if (_broadcast) req = request.extend(req, {broadcast: true})
   this._duplex.push(safe(req))
   this.emit('request', req)
   this._duplex.emit('request', req)
-  done()
 }

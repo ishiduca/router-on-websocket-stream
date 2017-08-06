@@ -53,7 +53,7 @@ var websocket = require('websocket-stream')
 var router = requrie('router-on-websocket-stream')
 
 var loc = window.location
-var uri = [loc.protocol, '//', loc.host].join('')
+var uri = [loc.protocol.replace('http', 'ws'), '//', loc.host].join('')
 
 var r = router()
 var reconnect = inject(uri => websocket(uri))
@@ -116,7 +116,7 @@ router.add('toUpperCase', function (params) {
 })
 ```
 
-##### router.route()
+##### var transformStream = router.route()
 
 create transform-stream.
 
@@ -154,4 +154,20 @@ upper.on('error', function (err) {
 })
 
 upper.write({text: 'foo'})
+```
+
+#### handleStream.broadcast(params)
+
+broadcast results sent from the server.
+
+```js
+var upper = ioStream.method('toUpperCase')
+upper.on('data', function (result) {
+  ...
+})
+upper.on('error', function (err) {
+  ...
+})
+
+upper.broadcast({text: 'foo'})
 ```
